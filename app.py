@@ -1,6 +1,7 @@
 import json
 import streamlit as st
 import json
+import ast
 import pandas as pd
 import datetime
 import io
@@ -23,7 +24,7 @@ def authenticate_google():
         if creds and creds.expired and creds.refresh_token:
             creds.refresh(Request())
         else:
-            client_config = json.loads(st.secrets["GOOGLE_CLIENT_SECRET"])
+            client_config = ast.literal_eval(st.secrets["GOOGLE_CLIENT_SECRET"])
             flow = InstalledAppFlow.from_client_config(client_config, SCOPES)
             creds = flow.run_local_server(port=0)
         with open('token.json', 'w') as token_file:
