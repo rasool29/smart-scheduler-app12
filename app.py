@@ -14,7 +14,8 @@ SCOPES = ['https://www.googleapis.com/auth/calendar.events']
 
 def authenticate_google():
     creds = None
-    token_path = 'token.json'
+    token_path = json.loads(st.secrets["GOOGLE_CLIENT_SECRET"])
+    flow = InstalledAppFlow.from_client_config(token_path, SCOPES)
     if os.path.exists(token_path):
         creds = Credentials.from_authorized_user_file(token_path, SCOPES)
     if not creds or not creds.valid:
