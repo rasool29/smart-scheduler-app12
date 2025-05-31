@@ -1,5 +1,5 @@
 import streamlit as st
-import json
+import json  # ✅ Added to fix the "name 'json' is not defined" error
 import pandas as pd
 import datetime
 import io
@@ -125,7 +125,7 @@ def main():
     work_start = st.sidebar.time_input("Work Start Time", datetime.time(9, 0))
     work_end = st.sidebar.time_input("Work End Time", datetime.time(18, 0))
     break_duration_minutes = st.sidebar.number_input("Break Duration (minutes)", min_value=0, max_value=60, value=10, step=1)
-    break_frequency = st.sidebar.number_input("Insert Break After Every N Tasks", min_value=1, max_value=10, value=3, step=1)  # ✅ New
+    break_frequency = st.sidebar.number_input("Insert Break After Every N Tasks", min_value=1, max_value=10, value=3, step=1)
 
     st.sidebar.markdown("---")
     st.sidebar.markdown("### Task Categories")
@@ -160,7 +160,7 @@ def main():
         else:
             schedule = schedule_tasks(tasks, work_start, work_end, break_duration_minutes, break_frequency)
             schedule = [t for t in schedule if t.get('date', datetime.date.today()) == selected_date]
-            st.session_state['schedule'] = schedule  # ✅ Reset previous schedule
+            st.session_state['schedule'] = schedule
 
     if 'schedule' in st.session_state:
         schedule = st.session_state['schedule']
