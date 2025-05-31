@@ -26,7 +26,7 @@ def authenticate_google():
             flow = InstalledAppFlow.from_client_config(client_config, SCOPES)
             creds = flow.run_local_server(port=0)
         with open('token.json', 'w') as token_file:
-            token_file.write(json.dumps(creds.to_json()))
+            token_file.write(creds.to_json())
     return creds
 
 def upload_tasks_to_calendar(tasks):
