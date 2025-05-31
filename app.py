@@ -1,5 +1,5 @@
 import streamlit as st
-import json  # ✅ Added to fix the "name 'json' is not defined" error
+import json
 import pandas as pd
 import datetime
 import io
@@ -83,7 +83,6 @@ def schedule_tasks(task_list, work_start, work_end, break_duration_minutes, brea
         })
         current_time = end_time
 
-        # Insert break after every `break_frequency` tasks
         if break_duration_minutes > 0 and break_frequency > 0 and (i + 1) % break_frequency == 0 and i < len(sorted_tasks) - 1:
             break_end = current_time + break_td
             if break_end > work_end_dt:
@@ -173,7 +172,6 @@ def main():
         st.subheader("Scheduled Tasks")
         st.dataframe(df_schedule.style.apply(color_row, axis=1), use_container_width=True)
 
-        # Excel Export
         excel_buffer = io.BytesIO()
         with pd.ExcelWriter(excel_buffer, engine='xlsxwriter') as writer:
             df_schedule.to_excel(writer, index=False, sheet_name='Schedule')
@@ -186,7 +184,6 @@ def main():
         excel_data = excel_buffer.getvalue()
         st.download_button("Download Schedule Excel", data=excel_data, file_name="schedule.xlsx", mime="application/vnd.ms-excel")
 
-        # PDF Export
         try:
             from fpdf import FPDF
             pdf = FPDF()
@@ -204,7 +201,6 @@ def main():
         except ImportError:
             st.warning("Install 'fpdf' package for PDF export.")
 
-        # Upload to Google Calendar
         if st.button("Upload Tasks to Google Calendar"):
             try:
                 upload_tasks_to_calendar(schedule)
