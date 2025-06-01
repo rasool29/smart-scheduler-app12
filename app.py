@@ -1,4 +1,3 @@
-import json
 import streamlit as st
 import json
 import pandas as pd
@@ -14,43 +13,18 @@ from google.auth.transport.requests import Request
 # Google Calendar API scope
 SCOPES = ['https://www.googleapis.com/auth/calendar.events']
 
-import json  # ✅ make sure this is at the top
-
 def authenticate_google():
+    import json
     creds = None
-    token_path = 'token.json'
 
-    # Load credentials from file if available
-    if os.path.exists(token_path):
-        creds = Credentials.from_authorized_user_file(token_path, SCOPES)
-
-    # If no (valid) credentials available, go through auth flow
-    if not creds or not creds.valid:
-        if creds and creds.expired and creds.refresh_token:
-            creds.refresh(Request())
-        else:
-            # Get secret from Streamlit secrets
-            client_config = {
-                "installed": {
-                    "client_id": st.secrets["GOOGLE_CLIENT_SECRET"]["client_id"],
-                    "project_id": st.secrets["GOOGLE_CLIENT_SECRET"]["project_id"],
-                    "auth_uri": st.secrets["GOOGLE_CLIENT_SECRET"]["auth_uri"],
-                    "token_uri": st.secrets["GOOGLE_CLIENT_SECRET"]["token_uri"],
-                    "auth_provider_x509_cert_url": st.secrets["GOOGLE_CLIENT_SECRET"]["auth_provider_x509_cert_url"],
-                    "client_secret": st.secrets["GOOGLE_CLIENT_SECRET"]["client_secret"],
-                    "redirect_uris": st.secrets["GOOGLE_CLIENT_SECRET"]["redirect_uris"]
-                }
-            }
-            flow = InstalledAppFlow.from_client_config(client_config, SCOPES)
-            creds = flow.run_local_server(port=8501)
-
-        # Save the credentials for the next run
-        with open(token_path, 'w') as token_file:
-            token_file.write(creds.to_json())
+    if "GOOGLE_TOKEN_JSON" in st.secrets:
+        creds_data = json.loads(st.secrets["GOOGLE_TOKEN_JSON"])
+        creds = Credentials.from_authorized_user_info(info=creds_data, scopes=SCOPES)
+    else:
+        st.error("Google token not found in secrets.")
+        return None
 
     return creds
-
-
 
 def upload_tasks_to_calendar(tasks):
     creds = authenticate_google()
@@ -73,11 +47,10 @@ def upload_tasks_to_calendar(tasks):
 
         event = {
             'summary': f"{task['task']} (Priority: {task['priority']}, Category: {task['category']})",
-            'start': {'dateTime': start.isoformat(), 'timeZone': 'Asia/Kolkata'},
-            'end': {'dateTime': end.isoformat(), 'timeZone': 'Asia/Kolkata'},
+            'start': {'dateTime': start.isoformat(), 'timeZone': 'UTC'},
+            'end': {'dateTime': end.isoformat(), 'timeZone': 'UTC'},
             'description': f"Duration: {task['duration']:.2f} hours\nCategory: {task['category']}\nPriority: {task['priority']}"
         }
-
         service.events().insert(calendarId=calendar_id, body=event).execute()
     st.success("✅ Tasks uploaded to Google Calendar successfully!")
 
@@ -107,6 +80,7 @@ def schedule_tasks(task_list, work_start, work_end, break_duration_minutes, brea
         })
         current_time = end_time
 
+        # Insert break after every `break_frequency` tasks
         if break_duration_minutes > 0 and break_frequency > 0 and (i + 1) % break_frequency == 0 and i < len(sorted_tasks) - 1:
             break_end = current_time + break_td
             if break_end > work_end_dt:
@@ -148,7 +122,7 @@ def main():
     work_start = st.sidebar.time_input("Work Start Time", datetime.time(9, 0))
     work_end = st.sidebar.time_input("Work End Time", datetime.time(18, 0))
     break_duration_minutes = st.sidebar.number_input("Break Duration (minutes)", min_value=0, max_value=60, value=10, step=1)
-    break_frequency = st.sidebar.number_input("Insert Break After Every N Tasks", min_value=1, max_value=10, value=3, step=1)
+    break_frequency = st.sidebar.number_input("Insert Break After Every N Tasks", min_value=1, max_value=10, value=3, step=1)  # ✅ New
 
     st.sidebar.markdown("---")
     st.sidebar.markdown("### Task Categories")
@@ -183,7 +157,7 @@ def main():
         else:
             schedule = schedule_tasks(tasks, work_start, work_end, break_duration_minutes, break_frequency)
             schedule = [t for t in schedule if t.get('date', datetime.date.today()) == selected_date]
-            st.session_state['schedule'] = schedule
+            st.session_state['schedule'] = schedule  # ✅ Reset previous schedule
 
     if 'schedule' in st.session_state:
         schedule = st.session_state['schedule']
@@ -196,6 +170,7 @@ def main():
         st.subheader("Scheduled Tasks")
         st.dataframe(df_schedule.style.apply(color_row, axis=1), use_container_width=True)
 
+        # Excel Export
         excel_buffer = io.BytesIO()
         with pd.ExcelWriter(excel_buffer, engine='xlsxwriter') as writer:
             df_schedule.to_excel(writer, index=False, sheet_name='Schedule')
@@ -208,6 +183,7 @@ def main():
         excel_data = excel_buffer.getvalue()
         st.download_button("Download Schedule Excel", data=excel_data, file_name="schedule.xlsx", mime="application/vnd.ms-excel")
 
+        # PDF Export
         try:
             from fpdf import FPDF
             pdf = FPDF()
@@ -225,6 +201,7 @@ def main():
         except ImportError:
             st.warning("Install 'fpdf' package for PDF export.")
 
+        # Upload to Google Calendar
         if st.button("Upload Tasks to Google Calendar"):
             try:
                 upload_tasks_to_calendar(schedule)
