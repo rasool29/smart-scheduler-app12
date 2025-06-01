@@ -17,33 +17,13 @@ SCOPES = ['https://www.googleapis.com/auth/calendar.events']
 def authenticate_google():
     import json
     creds = None
-    token_path = 'token.json'
 
-    # Load existing token if available
-    if os.path.exists(token_path):
-        creds = Credentials.from_authorized_user_file(token_path, SCOPES)
-
-    # If no (valid) credentials available, let the user log in.
-    if not creds or not creds.valid:
-        if creds and creds.expired and creds.refresh_token:
-            creds.refresh(Request())
-        else:
-            try:
-                client_config = json.loads(st.secrets["GOOGLE_CLIENT_SECRET"])
-                flow = InstalledAppFlow.from_client_config(client_config, SCOPES)
-
-                # ✅ Use this for headless environments like Streamlit Cloud
-                creds = flow.run_console()
-
-                # ✅ If you’re running locally with a GUI, use this instead:
-                # creds = flow.run_local_server(port=0)
-
-            except Exception as e:
-                st.error(f"Authentication failed: {e}")
-                return None
-
-        with open(token_path, 'w') as token_file:
-            token_file.write(creds.to_json())
+    if "GOOGLE_TOKEN_JSON" in st.secrets:
+        creds_data = json.loads(st.secrets["GOOGLE_TOKEN_JSON"])
+        creds = Credentials.from_authorized_user_info(info=creds_data, scopes=SCOPES)
+    else:
+        st.error("Google token not found in secrets.")
+        return None
 
     return creds
 
