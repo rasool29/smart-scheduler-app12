@@ -49,10 +49,11 @@ def upload_tasks_to_calendar(tasks):
 
         event = {
             'summary': f"{task['task']} (Priority: {task['priority']}, Category: {task['category']})",
-            'start': {'dateTime': start.isoformat(), 'timeZone': 'UTC'},
-            'end': {'dateTime': end.isoformat(), 'timeZone': 'UTC'},
+            'start': {'dateTime': start.isoformat(), 'timeZone': 'Asia/Kolkata'},
+            'end': {'dateTime': end.isoformat(), 'timeZone': 'Asia/Kolkata'},
             'description': f"Duration: {task['duration']:.2f} hours\nCategory: {task['category']}\nPriority: {task['priority']}"
         }
+
         service.events().insert(calendarId=calendar_id, body=event).execute()
     st.success("✅ Tasks uploaded to Google Calendar successfully!")
 
