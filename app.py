@@ -18,18 +18,35 @@ def authenticate_google():
     import json
     creds = None
     token_path = 'token.json'
+
+    # Load existing token if available
     if os.path.exists(token_path):
         creds = Credentials.from_authorized_user_file(token_path, SCOPES)
+
+    # If no (valid) credentials available, let the user log in.
     if not creds or not creds.valid:
         if creds and creds.expired and creds.refresh_token:
             creds.refresh(Request())
         else:
-            client_config = json.loads(st.secrets["GOOGLE_CLIENT_SECRET"])
-            flow = InstalledAppFlow.from_client_config(client_config, SCOPES)
-            creds = flow.run_local_server(port=0)
+            try:
+                client_config = json.loads(st.secrets["GOOGLE_CLIENT_SECRET"])
+                flow = InstalledAppFlow.from_client_config(client_config, SCOPES)
+
+                # ✅ Use this for headless environments like Streamlit Cloud
+                creds = flow.run_console()
+
+                # ✅ If you’re running locally with a GUI, use this instead:
+                # creds = flow.run_local_server(port=0)
+
+            except Exception as e:
+                st.error(f"Authentication failed: {e}")
+                return None
+
         with open(token_path, 'w') as token_file:
-                token_file.write(creds.to_json())
+            token_file.write(creds.to_json())
+
     return creds
+
 
 def upload_tasks_to_calendar(tasks):
     creds = authenticate_google()
