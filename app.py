@@ -15,6 +15,7 @@ from google.auth.transport.requests import Request
 SCOPES = ['https://www.googleapis.com/auth/calendar.events']
 
 def authenticate_google():
+    import json
     creds = None
     token_path = 'token.json'
     flow = 'secrets.toml'
