@@ -14,18 +14,42 @@ from google.auth.transport.requests import Request
 # Google Calendar API scope
 SCOPES = ['https://www.googleapis.com/auth/calendar.events']
 
-def authenticate_google():
-    import json
-    creds = None
+import json  # ✅ make sure this is at the top
 
-    if "GOOGLE_TOKEN_JSON" in st.secrets:
-        creds_data = json.loads(st.secrets["GOOGLE_TOKEN_JSON"])
-        creds = Credentials.from_authorized_user_info(info=creds_data, scopes=SCOPES)
-    else:
-        st.error("Google token not found in secrets.")
-        return None
+def authenticate_google():
+    creds = None
+    token_path = 'token.json'
+
+    # Load credentials from file if available
+    if os.path.exists(token_path):
+        creds = Credentials.from_authorized_user_file(token_path, SCOPES)
+
+    # If no (valid) credentials available, go through auth flow
+    if not creds or not creds.valid:
+        if creds and creds.expired and creds.refresh_token:
+            creds.refresh(Request())
+        else:
+            # Get secret from Streamlit secrets
+            client_config = {
+                "installed": {
+                    "client_id": st.secrets["GOOGLE_CLIENT_SECRET"]["client_id"],
+                    "project_id": st.secrets["GOOGLE_CLIENT_SECRET"]["project_id"],
+                    "auth_uri": st.secrets["GOOGLE_CLIENT_SECRET"]["auth_uri"],
+                    "token_uri": st.secrets["GOOGLE_CLIENT_SECRET"]["token_uri"],
+                    "auth_provider_x509_cert_url": st.secrets["GOOGLE_CLIENT_SECRET"]["auth_provider_x509_cert_url"],
+                    "client_secret": st.secrets["GOOGLE_CLIENT_SECRET"]["client_secret"],
+                    "redirect_uris": st.secrets["GOOGLE_CLIENT_SECRET"]["redirect_uris"]
+                }
+            }
+            flow = InstalledAppFlow.from_client_config(client_config, SCOPES)
+            creds = flow.run_local_server(port=8501)
+
+        # Save the credentials for the next run
+        with open(token_path, 'w') as token_file:
+            token_file.write(creds.to_json())
 
     return creds
+
 
 
 def upload_tasks_to_calendar(tasks):
