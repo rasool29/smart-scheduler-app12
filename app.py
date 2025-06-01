@@ -23,9 +23,9 @@ def authenticate_google():
         if creds and creds.expired and creds.refresh_token:
             creds.refresh(Request())
         else:
-            client_config = json.loads(st.secrets["GOOGLE_CLIENT_SECRET"])
+            flow = json.loads(st.secrets["GOOGLE_CLIENT_SECRET"])
             with open("client_secret.json", "w") as f:
-                json.dump(client_config, f)
+                json.dump(flow, f)
             creds = flow.run_local_server(port=0)
         with open(token_path, 'w') as token_file:
                 token_file.write(creds.to_json())
