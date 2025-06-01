@@ -18,7 +18,6 @@ def authenticate_google():
     import json
     creds = None
     token_path = 'token.json'
-    flow = 'secrets.toml'
     if os.path.exists(token_path):
         creds = Credentials.from_authorized_user_file(token_path, SCOPES)
     if not creds or not creds.valid:
