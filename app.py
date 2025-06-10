@@ -10,6 +10,49 @@ from google_auth_oauthlib.flow import InstalledAppFlow
 from googleapiclient.discovery import build
 from google.auth.transport.requests import Request
 
+# === Inject futuristic CSS ===
+st.markdown("""
+    <style>
+    body {
+        background-color: #0f0f1c;
+        color: #FFFFFF;
+    }
+    .css-1aumxhk, .css-1v3fvcr, .stButton>button {
+        background: linear-gradient(135deg, #1e1e2f, #292940);
+        border-radius: 12px;
+        border: 1px solid #00f0ff;
+        color: #ffffff;
+        font-weight: bold;
+        padding: 8px 16px;
+        transition: 0.3s;
+    }
+    .stButton>button:hover {
+        background: #00f0ff;
+        color: black;
+        transform: scale(1.05);
+    }
+    .stDownloadButton>button {
+        background: linear-gradient(90deg, #00ffe0, #007cf0);
+        color: black;
+        font-weight: bold;
+        border: none;
+        border-radius: 10px;
+    }
+    .stDownloadButton>button:hover {
+        background: linear-gradient(90deg, #007cf0, #00ffe0);
+        transform: scale(1.05);
+    }
+    .st-expanderHeader {
+        background-color: #1f1f3a !important;
+        border-radius: 8px;
+    }
+    .stDataFrame {
+        border: 1px solid #00ffe0;
+        border-radius: 8px;
+    }
+    </style>
+""", unsafe_allow_html=True)
+
 # Google Calendar API scope
 SCOPES = ['https://www.googleapis.com/auth/calendar.events']
 
@@ -108,9 +151,9 @@ CATEGORY_COLORS = {
 }
 
 def main():
-    st.title("Ultimate Smart Scheduler with Google Calendar Integration")
+    st.title("🚀 Futuristic Smart Scheduler with Google Calendar")
 
-    st.sidebar.header("Select Date to Manage Tasks")
+    st.sidebar.header("📆 Task Date Selection")
     date_option = st.sidebar.radio("Choose Date:", options=["Today", "Tomorrow", "Pick a Date"])
     if date_option == "Today":
         selected_date = datetime.date.today()
@@ -118,27 +161,24 @@ def main():
         selected_date = datetime.date.today() + datetime.timedelta(days=1)
     else:
         selected_date = st.sidebar.date_input("Pick a Date", datetime.date.today())
-    st.sidebar.markdown("---")
 
-    st.sidebar.header("Scheduler Settings")
+    st.sidebar.header("🕒 Scheduler Settings")
     work_start = st.sidebar.time_input("Work Start Time", datetime.time(9, 0))
     work_end = st.sidebar.time_input("Work End Time", datetime.time(18, 0))
     break_duration_minutes = st.sidebar.number_input("Break Duration (minutes)", min_value=0, max_value=60, value=10, step=1)
-    break_frequency = st.sidebar.number_input("Insert Break After Every N Tasks", min_value=1, max_value=10, value=3, step=1)  # ✅ New
+    break_frequency = st.sidebar.number_input("Insert Break After Every N Tasks", min_value=1, max_value=10, value=3, step=1)
 
-    st.sidebar.markdown("---")
-    st.sidebar.markdown("### Task Categories")
-    categories = st.sidebar.text_area("Add categories (comma separated)", "Work, Study, Exercise, Break, Other").split(",")
+    categories = st.sidebar.text_area("🎨 Categories (comma-separated)", "Work, Study, Exercise, Break, Other").split(",")
     categories = [c.strip() for c in categories if c.strip()]
 
-    st.header(f"Add / Edit Tasks for {selected_date.strftime('%Y-%m-%d')}")
+    st.header(f"📝 Add / Edit Tasks for {selected_date.strftime('%Y-%m-%d')}")
     task_count = st.number_input("Number of tasks to add", min_value=1, step=1)
 
     tasks = []
     for i in range(task_count):
         with st.expander(f"Task {i + 1} Details", expanded=True):
             task_name = st.text_input(f"Name", key=f"name_{i}")
-            task_duration = st.number_input(f"Duration (hours, e.g. 1.5)", min_value=0.01, step=0.01, format="%.2f", key=f"duration_{i}")
+            task_duration = st.number_input(f"Duration (hours)", min_value=0.01, step=0.01, format="%.2f", key=f"duration_{i}")
             task_priority = st.number_input(f"Priority (1 = highest)", min_value=1, max_value=10, value=5, step=1, key=f"priority_{i}")
             task_category = st.selectbox(f"Category", options=categories, index=0, key=f"category_{i}")
             task_date = selected_date
@@ -151,7 +191,7 @@ def main():
                     'date': task_date
                 })
 
-    if st.button("Generate Schedule"):
+    if st.button("🧠 Generate Schedule"):
         if not tasks:
             st.error("Add at least one task to schedule.")
         elif work_start >= work_end:
@@ -159,7 +199,7 @@ def main():
         else:
             schedule = schedule_tasks(tasks, work_start, work_end, break_duration_minutes, break_frequency)
             schedule = [t for t in schedule if t.get('date', datetime.date.today()) == selected_date]
-            st.session_state['schedule'] = schedule  # ✅ Reset previous schedule
+            st.session_state['schedule'] = schedule
 
     if 'schedule' in st.session_state:
         schedule = st.session_state['schedule']
@@ -169,7 +209,7 @@ def main():
             color = CATEGORY_COLORS.get(row['category'], '#FFFFFF')
             return ['background-color: ' + color] * len(row)
 
-        st.subheader("Scheduled Tasks")
+        st.subheader("🧾 Scheduled Tasks")
         st.dataframe(df_schedule.style.apply(color_row, axis=1), use_container_width=True)
 
         # Excel Export
@@ -183,7 +223,7 @@ def main():
                 fmt = workbook.add_format({'bg_color': color})
                 worksheet.set_row(i+1, None, fmt)
         excel_data = excel_buffer.getvalue()
-        st.download_button("Download Schedule Excel", data=excel_data, file_name="schedule.xlsx", mime="application/vnd.ms-excel")
+        st.download_button("📥 Download Excel", data=excel_data, file_name="schedule.xlsx", mime="application/vnd.ms-excel")
 
         # PDF Export
         try:
@@ -199,12 +239,12 @@ def main():
             pdf.output("schedule.pdf")
             with open("schedule.pdf", "rb") as f:
                 pdf_data = f.read()
-            st.download_button("Download Schedule PDF", data=pdf_data, file_name="schedule.pdf", mime="application/pdf")
+            st.download_button("📥 Download PDF", data=pdf_data, file_name="schedule.pdf", mime="application/pdf")
         except ImportError:
-            st.warning("Install 'fpdf' package for PDF export.")
+            st.warning("Install 'fpdf' for PDF export.")
 
         # Upload to Google Calendar
-        if st.button("Upload Tasks to Google Calendar"):
+        if st.button("📤 Upload to Google Calendar"):
             try:
                 upload_tasks_to_calendar(schedule)
             except Exception as e:
