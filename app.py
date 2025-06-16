@@ -97,6 +97,7 @@ def schedule_tasks(task_list, work_start, work_end, break_duration_minutes, brea
 
         scheduled.append({
             'task': task['name'],
+            'name': task['name'],
             'start': current_time.strftime('%H:%M'),
             'end': end_time.strftime('%H:%M'),
             'duration': task['duration'],
@@ -112,6 +113,7 @@ def schedule_tasks(task_list, work_start, work_end, break_duration_minutes, brea
                 break
             scheduled.append({
                 'task': 'Break',
+                'name': 'Break',
                 'start': current_time.strftime('%H:%M'),
                 'end': break_end.strftime('%H:%M'),
                 'duration': break_duration_minutes / 60,
@@ -188,6 +190,7 @@ def main():
     if 'schedule' in st.session_state:
         schedule = st.session_state['schedule']
         df_schedule = pd.DataFrame(schedule)
+        df_schedule['task'] = df_schedule['task'].fillna(df_schedule['name'])  # Ensure task names are visible
 
         def color_row(row):
             color = CATEGORY_COLORS.get(row['category'], '#FFFFFF')
